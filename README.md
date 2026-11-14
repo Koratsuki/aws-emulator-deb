@@ -199,3 +199,8 @@ docker-compose up -d --force-recreate
 - El puerto se publica solo en `127.0.0.1`, no en toda la red. No uses `-p 9297:9297` sin la IP, porque expone el emulador a otras maquinas.
 - El emulador mantiene los recursos en memoria. Al detener el contenedor se pierden los recursos emulados, pero se conservan los archivos de credenciales y certificados en `./.aws/emulator`.
 - El volumen usa un bind mount a `./.aws/emulator`. Si la carpeta no existe y Docker la crea, los permisos seran de `root` y el contenedor fallara. Usa `./start.sh` para evitarlo.
+
+## Referencias
+
+- Getting started with Docker: https://docs.aws.amazon.com/emulator/latest/userguide/getting-started-docker.html
+- Getting started on Linux: https://docs.aws.amazon.com/emulator/latest/userguide/getting-started-linux.html
