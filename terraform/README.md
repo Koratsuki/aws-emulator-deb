@@ -20,7 +20,7 @@ locals {
 provider "aws" {
   shared_credentials_files = ["${local.emulator_dir}/emulator_credentials"]
   shared_config_files      = ["${local.emulator_dir}/config"]
-  profile                  = "default"
+  profile                  = var.profile
   custom_ca_bundle         = "${local.emulator_dir}/ca.pem"
   # ...
 }
@@ -29,7 +29,7 @@ provider "aws" {
 Puntos importantes:
 
 - `shared_credentials_files` apunta a `emulator_credentials`, que el emulador regenera en cada arranque. Al usar la ruta y no el contenido, el provider siempre lee las claves vigentes.
-- `shared_config_files` y `profile` leen el perfil `default` del archivo `config`.
+- `shared_config_files` y `profile` leen el perfil indicado en la variable `profile` (por defecto `default`) del archivo `config`.
 - `custom_ca_bundle` usa la ruta del host. Es obligatorio porque el `config` generado contiene `ca_bundle = /home/emulator/...`, una ruta interna del contenedor que no existe en el host. `custom_ca_bundle` tiene prioridad y corrige esa ruta.
 
 ## Uso
@@ -63,6 +63,22 @@ Destruir los recursos de ejemplo:
 terraform destroy -auto-approve
 ```
 
+## Variables
+
+| Variable | Valor por defecto | Uso |
+|---|---|---|
+| `region` | `us-east-1` | Region del provider. |
+| `profile` | `default` | Perfil leido del `config` del emulador. |
+| `endpoint_url` | `https://127.0.0.1:9297` | URL base del emulador. |
+| `example_bucket_name` | `emulator-terraform-example` | Nombre del bucket de ejemplo. |
+| `example_queue_name` | `emulator-terraform-example` | Nombre de la cola de ejemplo. |
+
+Para cambiar un valor sin editar los archivos:
+
+```bash
+terraform apply -auto-approve -var="profile=default"
+```
+
 ## Configuracion del provider
 
 Las opciones clave de `main.tf`:
@@ -70,7 +86,7 @@ Las opciones clave de `main.tf`:
 | Opcion | Motivo |
 |---|---|
 | `shared_credentials_files` | Lee las claves que genera el emulador en cada arranque. |
-| `shared_config_files` y `profile` | Leen el perfil `default` del `config` del emulador. |
+| `shared_config_files` y `profile` | Leen el perfil indicado en `profile` (por defecto `default`) del `config` del emulador. |
 | `custom_ca_bundle` | Confia en el certificado autofirmado usando la ruta del host. |
 | `endpoints` | El provider no tiene un endpoint global; se indica el emulador por servicio. |
 | `skip_credentials_validation` | Evita validar credenciales contra AWS real. |

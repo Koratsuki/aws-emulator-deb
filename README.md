@@ -124,6 +124,8 @@ Las credenciales se generan en cada arranque. No las copies a otro sitio ni las 
 
 El directorio `terraform/` incluye una configuracion de ejemplo que apunta al emulador y crea un bucket S3, un objeto y una cola SQS. El provider lee directamente las credenciales, el perfil y el CA desde `./.aws/emulator/9297/`, asi que no necesitas exportar variables de AWS.
 
+El perfil se controla con la variable `profile` (por defecto `default`). Tambien puedes ajustar `region`, `endpoint_url` y los nombres de los recursos de ejemplo con variables. Consulta `terraform/README.md` para la tabla de variables.
+
 ```bash
 cd terraform
 terraform init
