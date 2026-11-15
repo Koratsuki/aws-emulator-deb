@@ -15,3 +15,9 @@ variable "example_bucket_name" {
   type        = string
   default     = "emulator-terraform-example"
 }
+
+variable "example_queue_name" {
+  description = "Nombre de la cola SQS que crea el recurso de ejemplo."
+  type        = string
+  default     = "emulator-terraform-example"
+}

@@ -9,8 +9,23 @@ terraform {
   }
 }
 
+locals {
+  # Archivos que genera el emulador en cada arranque.
+  emulator_dir = abspath("${path.module}/../.aws/emulator/9297")
+}
+
 provider "aws" {
   region = var.region
+
+  # Credenciales y perfil que genera el emulador. No hace falta exportar
+  # AWS_ACCESS_KEY_ID ni AWS_SECRET_ACCESS_KEY en la terminal.
+  shared_credentials_files = ["${local.emulator_dir}/emulator_credentials"]
+  shared_config_files      = ["${local.emulator_dir}/config"]
+  profile                  = "default"
+
+  # El emulador usa un certificado autofirmado. custom_ca_bundle apunta
+  # a la ruta del host, no a la ruta interna del contenedor.
+  custom_ca_bundle = "${local.emulator_dir}/ca.pem"
 
   # El emulador no implementa todas las validaciones previas del provider.
   skip_credentials_validation = true
@@ -32,8 +47,19 @@ provider "aws" {
   }
 }
 
-# Recurso de ejemplo. Eliminalo o adaptalo a tus necesidades.
+# Recursos de ejemplo. Eliminalos o adaptalos a tus necesidades.
 resource "aws_s3_bucket" "example" {
   bucket        = var.example_bucket_name
   force_destroy = true
+}
+
+resource "aws_s3_object" "example" {
+  bucket       = aws_s3_bucket.example.id
+  key          = "hola.txt"
+  content      = "Hola desde AWS Emulator\n"
+  content_type = "text/plain"
+}
+
+resource "aws_sqs_queue" "example" {
+  name = var.example_queue_name
 }

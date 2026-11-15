@@ -52,7 +52,7 @@ El script hace lo siguiente:
 
 1. Crea `./.aws/emulator` con el usuario actual.
 2. Si la carpeta quedo propiedad de `root` en una ejecucion anterior, corrige la propiedad con `sudo`.
-3. Ejecuta el arranque con Docker Compose (`docker-compose up -d` o `docker-compose up -d`, segun la version instalada).
+3. Ejecuta el arranque con Docker Compose (`docker-compose up -d` o `docker compose up -d`, segun la version instalada).
 
 ### Opcion manual
 
@@ -76,7 +76,7 @@ docker-compose ps
 Endpoint de salud:
 
 ```bash
-curl -sk https://127.0.0.1:9297/__admin/health
+curl -s --cacert .aws/emulator/9297/ca.pem https://127.0.0.1:9297/__admin/health
 ```
 
 La respuesta esperada es:
@@ -106,28 +106,23 @@ El archivo `config` generado referencia rutas internas del contenedor. Al usar e
 
 ```bash
 export AWS_SHARED_CREDENTIALS_FILE="$PWD/.aws/emulator/9297/emulator_credentials"
+export AWS_CONFIG_FILE="$PWD/.aws/emulator/9297/config"
 export AWS_ENDPOINT_URL="https://127.0.0.1:9297"
 export AWS_DEFAULT_REGION="us-east-1"
 export AWS_CA_BUNDLE="$PWD/.aws/emulator/9297/ca.pem"
+export AWS_EC2_METADATA_DISABLED=true
+export AWS_DISABLE_HOST_PREFIX_INJECTION=true
 
 aws s3 ls
 ```
+
+`AWS_CA_BUNDLE` es importante aunque uses `AWS_CONFIG_FILE`: el `config` generado contiene la ruta interna del contenedor (`/home/emulator/...`), y la variable de entorno la sobrescribe con la ruta valida del host.
 
 Las credenciales se generan en cada arranque. No las copies a otro sitio ni las incluyas en el control de versiones; leelas siempre desde `emulator_credentials`.
 
 ## Usar Terraform contra el emulador
 
-El directorio `terraform/` incluye una configuracion de ejemplo que apunta al emulador y crea un bucket S3.
-
-Desde la raiz del repositorio, exporta las credenciales y el CA generados por el emulador:
-
-```bash
-export AWS_ACCESS_KEY_ID=$(awk -F' = ' '/aws_access_key_id/{print $2}' .aws/emulator/9297/emulator_credentials)
-export AWS_SECRET_ACCESS_KEY=$(awk -F' = ' '/aws_secret_access_key/{print $2}' .aws/emulator/9297/emulator_credentials)
-export AWS_CA_BUNDLE="$PWD/.aws/emulator/9297/ca.pem"
-```
-
-Luego ejecuta Terraform:
+El directorio `terraform/` incluye una configuracion de ejemplo que apunta al emulador y crea un bucket S3, un objeto y una cola SQS. El provider lee directamente las credenciales, el perfil y el CA desde `./.aws/emulator/9297/`, asi que no necesitas exportar variables de AWS.
 
 ```bash
 cd terraform
@@ -142,7 +137,7 @@ Para eliminar los recursos de ejemplo:
 terraform destroy -auto-approve
 ```
 
-Consulta `terraform/README.md` para la configuracion del provider, los servicios verificados y las consideraciones sobre el estado.
+Si el emulador se reinicia, las credenciales y el certificado se regeneran, pero el provider los lee por ruta: no hace falta cambiar la configuracion ni volver a exportar nada. Consulta `terraform/README.md` para la configuracion del provider, los servicios verificados y las consideraciones sobre el estado.
 
 ## Detener y limpiar
 
@@ -215,7 +210,7 @@ Edita `docker-compose.yml` y ajusta el mapeo y el healthcheck. Por ejemplo, para
 ports:
   - 127.0.0.1:9300:9300
 healthcheck:
-  test: ["CMD", "curl", "-sk", "https://127.0.0.1:9300/__admin/health"]
+  test: ["CMD", "curl", "-s", "--cacert", "/home/emulator/.aws/emulator/9300/ca.pem", "https://127.0.0.1:9300/__admin/health"]
 ```
 
 Luego recrea el contenedor:
@@ -227,6 +222,7 @@ docker-compose up -d --force-recreate
 ## Notas
 
 - El puerto se publica solo en `127.0.0.1`, no en toda la red. No uses `-p 9297:9297` sin la IP, porque expone el emulador a otras maquinas.
+- El servicio esta limitado a 2 GiB de memoria con `mem_limit: 2g` y `memswap_limit: 2g` (sin swap). Si el emulador supera el limite, el contenedor se detiene con codigo 137 y se pierden los recursos emulados.
 - El emulador mantiene los recursos en memoria. Al detener el contenedor se pierden los recursos emulados, pero se conservan los archivos de credenciales y certificados en `./.aws/emulator`.
 - El volumen usa un bind mount a `./.aws/emulator`. Si la carpeta no existe y Docker la crea, los permisos seran de `root` y el contenedor fallara. Usa `./start.sh` para evitarlo.
 
