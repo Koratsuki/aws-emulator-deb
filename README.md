@@ -19,7 +19,8 @@ El contenedor se construye a partir de `debian:13-slim`, instala el paquete ofic
 ├── docker-compose.yml    # Servicio, volumen, puerto y healthcheck
 ├── aws.env               # Variables de entorno del contenedor
 ├── start.sh              # Arranque recomendado (crea el volumen con permisos correctos)
-├── .gitignore            # Excluye .aws/ del control de versiones
+├── .gitignore            # Excluye .aws/ y artefactos de Terraform
+├── terraform/            # Configuracion de ejemplo de Terraform
 └── .aws/emulator/        # Datos generados por el emulador (se crea al arrancar)
 ```
 
@@ -113,6 +114,35 @@ aws s3 ls
 ```
 
 Las credenciales se generan en cada arranque. No las copies a otro sitio ni las incluyas en el control de versiones; leelas siempre desde `emulator_credentials`.
+
+## Usar Terraform contra el emulador
+
+El directorio `terraform/` incluye una configuracion de ejemplo que apunta al emulador y crea un bucket S3.
+
+Desde la raiz del repositorio, exporta las credenciales y el CA generados por el emulador:
+
+```bash
+export AWS_ACCESS_KEY_ID=$(awk -F' = ' '/aws_access_key_id/{print $2}' .aws/emulator/9297/emulator_credentials)
+export AWS_SECRET_ACCESS_KEY=$(awk -F' = ' '/aws_secret_access_key/{print $2}' .aws/emulator/9297/emulator_credentials)
+export AWS_CA_BUNDLE="$PWD/.aws/emulator/9297/ca.pem"
+```
+
+Luego ejecuta Terraform:
+
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply -auto-approve
+```
+
+Para eliminar los recursos de ejemplo:
+
+```bash
+terraform destroy -auto-approve
+```
+
+Consulta `terraform/README.md` para la configuracion del provider, los servicios verificados y las consideraciones sobre el estado.
 
 ## Detener y limpiar
 
