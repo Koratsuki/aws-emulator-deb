@@ -4,6 +4,12 @@ variable "region" {
   default     = "us-east-1"
 }
 
+variable "profile" {
+  description = "Perfil de uso en el emulador."
+  type        = string
+  default     = "default"
+}
+
 variable "endpoint_url" {
   description = "URL base del emulador local de AWS."
   type        = string

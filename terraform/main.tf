@@ -21,7 +21,7 @@ provider "aws" {
   # AWS_ACCESS_KEY_ID ni AWS_SECRET_ACCESS_KEY en la terminal.
   shared_credentials_files = ["${local.emulator_dir}/emulator_credentials"]
   shared_config_files      = ["${local.emulator_dir}/config"]
-  profile                  = "default"
+  profile                  = var.profile
 
   # El emulador usa un certificado autofirmado. custom_ca_bundle apunta
   # a la ruta del host, no a la ruta interna del contenedor.
